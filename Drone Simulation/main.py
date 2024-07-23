@@ -67,6 +67,11 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
                 if drone.finished == False:
                     drone.active = True
                     drone.next_ring()
+
+            elif(trajectory == 3):
+                if drone.finished == False:
+                    drone.active == True
+                    drone.next_spiral()
         
         
         sleep(.1)
@@ -90,8 +95,8 @@ def main():
 
     while (again==True):
 
-        while (trajectory not in ['1','2']):
-            trajectory = input("Select simulation trajectory:\n1: Radial\n2: Ring\n")
+        while (trajectory not in ['1','2','3']):
+            trajectory = input("Select simulation trajectory:\n1: Radial\n2: Ring\n3: Spiral\n")
         
         trajectory = int(trajectory)
 

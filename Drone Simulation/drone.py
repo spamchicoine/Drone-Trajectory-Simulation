@@ -23,6 +23,12 @@ class Drone:
             self.x = 300 + self.orbit_radius
             self.y = 300
         
+        elif self.trajectory == 3:
+            self.spiral_coords = self.create_spiral_coords()
+            self.x = 300
+            self.y = 300
+            self.sci = 0 #Index in spiral_coords
+        
         self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
         self.tau = 100
         self.active = False
@@ -194,8 +200,22 @@ class Drone:
 
         self.x = (dx * error_scale) + 300
         self.y = (dy * error_scale) + 300
-        
-   
+
+    def next_spiral(self):
+        newx = self.spiral_coords[self.sci][0] + 300
+        newy = self.spiral_coords[self.sci][1] + 300
+
+        dx = self.x - newx
+        dy = self.y - newy
+
+        self.canvas.move(self.drone_point, dx, dy)
+
+        self.x = newx
+        self.y = newy
+
+        self.sci+=1
+
+
     def check_covered_V2(self,coverage):
 
         for area in self.sub_area_list:
@@ -215,8 +235,37 @@ class Drone:
 
             elif cornerdistance < self.coverage_radius*self.coverage_radius:
                 area.covered+=coverage
+
+    def create_spiral_coords(self):
+
+        coord_list =[]
+
+        pi_sq = np.pi*np.pi
+        tal = self.area_radius * (2*((1+pi_sq)**(3/2) - 1))/(3*pi_sq) # Total arc length
+
+        ctal = 0 #keep track of tal as we work through it
+
+        while tal > 0:
+
+            if tal > 1:
+                ctal += 1
+                htag = 1
+                tal -= 1
             
-            pass
+            elif tal > 0:
+                ctal += tal
+                htag = tal
+                tal -= tal
+
+            theta = np.sqrt(((12*pi_sq*ctal + self.area_radius*8)/self.area_radius)**(2/3)-4) #Theta value of a point ctal arc length into the spiral
+
+            hypot = (self.area_radius*theta**2) / (4*pi_sq)
+            x = hypot*np.cos(theta)
+            y = hypot*np.sin(theta)
+
+            coord_list.append((x,y,htag))
+        
+        return coord_list
 
     '''
     def check_covered_sub_area(self, coverage):
