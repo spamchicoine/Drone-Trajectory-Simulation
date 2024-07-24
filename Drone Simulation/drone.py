@@ -11,29 +11,33 @@ class Drone:
         self.area_radius = scaled_area_radius
         self.coverage_radius = scaled_drone_coverage
         self.scale_factor = scale_factor
-
-        if self.trajectory == 1:
-            self.x = 300
-            self.y = 300
-            self.theta = (2*np.pi / num_drones) * i
-            self.flip = False
-
-        elif self.trajectory == 2:
-            self.orbit_radius = np.sqrt(i/(num_drones+1))*self.area_radius
-            self.x = 300 + self.orbit_radius
-            self.y = 300
-        
-        elif self.trajectory == 3:
-            self.spiral_coords = self.create_spiral_coords()
-            self.x = 300
-            self.y = 300
-            self.sci = 0 #Index in spiral_coords
-        
-        self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
         self.tau = 100
+
         self.active = False
         self.finished = False
 
+        match self.trajectory:
+            
+            case 1:
+                self.x = 300
+                self.y = 300
+                self.theta = (2*np.pi / num_drones) * i
+                self.flip = False
+            
+            case 2:
+                self.orbit_radius = np.sqrt(i/(num_drones+1))*self.area_radius
+                self.x = 300 + self.orbit_radius
+                self.y = 300
+            
+            case 3:
+                self.theta = (2*np.pi / num_drones) * i
+                self.spiral_coords = self.create_spiral_coords()
+                self.x = 300
+                self.y = 300
+                self.sci = 0 #Index in spiral_coords
+                
+        self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
+        
         self.drone_point = self.canvas.create_oval(self.x - self.coverage_radius, self.y - self.coverage_radius, self.x + self.coverage_radius, self.y + self.coverage_radius,fill='blue')
         
         
@@ -186,7 +190,14 @@ class Drone:
                         self.canvas.move(self.drone_point, -vrx, 0)
                     
                     vc -= vc
-        
+
+                if (((distancex > 0) and ((self.x - 300) > 0)) and ((self.y - 300) * distancey < 0)): #Probably a bad way of checking if the drones have compeleted one rotation but it seems to work
+                    self.active = False
+                    self.finished = True
+                    self.canvas.delete(self.drone_point)
+                    vc = 0 #Stop loop
+    
+
         # Accounting for floating points error
         dx = self.x - 300
         dy = self.y - 300
@@ -202,6 +213,7 @@ class Drone:
         self.y = (dy * error_scale) + 300
 
     def next_spiral(self):
+
         newx = self.spiral_coords[self.sci][0] + 300
         newy = self.spiral_coords[self.sci][1] + 300
 
@@ -214,7 +226,6 @@ class Drone:
         self.y = newy
 
         self.sci+=1
-
 
     def check_covered_V2(self,coverage):
 
@@ -260,124 +271,9 @@ class Drone:
             theta = np.sqrt(((12*pi_sq*ctal + self.area_radius*8)/self.area_radius)**(2/3)-4) #Theta value of a point ctal arc length into the spiral
 
             hypot = (self.area_radius*theta**2) / (4*pi_sq)
-            x = hypot*np.cos(theta)
-            y = hypot*np.sin(theta)
+            x = hypot*np.cos(theta+self.theta)
+            y = hypot*np.sin(theta+self.theta)
 
             coord_list.append((x,y,htag))
         
         return coord_list
-
-    '''
-    def check_covered_sub_area(self, coverage):
-
-        #--- Check every sub_area
-        for area in self.sub_area_list:
-                
-                #--- Each sub area can be confined by its 4 corners, thus we can check if each is closer to the drones center than the drones coverage radius
-                #--- Note we use self.x and self.y which are updated unit by unit, allowing us to check virtually continously
-                top_left = np.sqrt((area.x1 - self.x)*(area.x1 - self.x) + (area.y1 - self.y)*(area.y1 - self.y))
-                top_right = np.sqrt(((area.x1 - self.x) + area.side_length)*((area.x1 - self.x) + area.side_length) + (area.y1 - self.y)*(area.y1 - self.y))
-                bottom_right = np.sqrt((area.x2 - self.x)*(area.x2 - self.x) + (area.y2 - self.y)*(area.y2 - self.y))
-                bottom_left = np.sqrt(((area.x2 - self.x) - area.side_length)*((area.x2 - self.x) - area.side_length) + (area.y2 - self.y)*(area.y2 - self.y))
-                
-                #The coverage amount added is inversely proportional to the velocity of the drone
-                if top_left < self.coverage_radius:
-                    area.covered += coverage
-                
-                elif top_right < self.coverage_radius:
-                    area.covered += coverage
-                
-                elif bottom_right < self.coverage_radius:
-                    area.covered += coverage
-                
-                elif bottom_left < self.coverage_radius:
-                    area.covered += coverage
-
-                pass
-    '''
-    '''
-    def next_1(self):
-        if (self.active == True and self.finished == False):
-
-            #--- Distance from drones center to the "origin" (circle areas center)
-            self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
-
-            v = (self.area_radius * self.area_radius) / (self.tau*(self.R + 1))
-            #v = 10 * self.scale_factor
-
-            #--- Total amount to change in x and y to move v units, the drone will visually move by this much at once
-            vx = np.cos(self.theta)*v
-            vy = np.sin(self.theta)*v*-1
-
-            #--- Amount starting at v to keep track of the total amount of velocity covered
-            vc = v
-
-            #--- Decimal portion of the velocity
-            if v >= 1:
-                r = v % (v // 1)
-            else:
-                r = v
-            
-            #--- Amounts to change in x and y to move 1 unit
-            v1x = np.cos(self.theta)
-            v1y = np.sin(self.theta)*-1
-
-            #--- Amounts to change in x and y to move the decimal portion of v, 0 if v is an integer
-            vrx = np.cos(self.theta)*r
-            vry = np.sin(self.theta)*r*-1
-            
-            #--- Cannot update change in velocity at once must break it into no greater than movements of 1 unit at a time checking coverage at each to avoid jumping areas and keeping coverage uniform
-            #--- Then coverage must be scaled inversely proportional to velocity, higher velocity means less time spent over a given sub area
-            while (vc > 0):
-                
-                #--- Checks if drone has reached the circle areas edge
-                if (self.R + self.coverage_radius > self.area_radius):
-                    self.flip = True
-                
-                #--- Check if drone has returned to the center, if so that drone paths is complete
-                if (self.flip == True and self.R < 1):
-                    self.canvas.delete(self.drone_point)
-                    self.active = False
-                    self.finished = True
-                
-                #--- Coverage is an abritrary measurement of the amount of time a sub area has been within the coverage radius of a drone
-                coverage = 0
-                
-                #--- We move 1 unit at a time if the velocity is greater than 1
-                if vc >= 1:
-
-                    coverage = 1/v
-                    self.check_covered_V2(coverage)
-                    pass
-                    if self.flip == True:
-                        self.x -= v1x
-                        self.y -= v1y
-                        self.canvas.move(self.drone_point, -v1x, -v1y)
-                    
-                    else:
-                        self.x += v1x
-                        self.y += v1y
-                        self.canvas.move(self.drone_point, v1x, v1y)
-
-                    #--- Subtract one from the remianing velocity to process
-                    vc -= 1
-
-                #--- Obviously is the velocity is no an integer we need to be able to process the remaining velocity once it is below 1 but still above 0
-                elif vc > 0:
-
-                    coverage = r/v
-                    self.check_covered_V2(coverage)
-                    pass
-                    if self.flip == True:
-                        self.x -= vrx
-                        self.y -= vry
-                        self.canvas.move(self.drone_point, -vrx, -vry)
-                    
-                    else:
-                        self.x += vrx
-                        self.y += vry
-                        self.canvas.move(self.drone_point, vrx, vry)
-                    
-                    #--- Subtract the decimal portion of the velocity which should result in 0 velocity left to process breaking the while loop
-                    vc -= r
-    '''

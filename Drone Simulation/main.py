@@ -17,24 +17,13 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
     area = canvas.create_oval(canvas_size/2 - 200, canvas_size/2 - 200, canvas_size/2 + 200, canvas_size/2 + 200)
 
     scale_factor = canvas_size / (3 * radius)
+    
+    scaled_area_radius = radius * scale_factor
 
     #------- Generate Sub areas -------
     
-    cursor = 0
-    scaled_area_radius = radius * scale_factor
-    row_length = scaled_area_radius
-    scaled_square_side = square_side * scale_factor
-    sub_area_list = []
+    sub_area_list = generate_sub_areas(canvas, scaled_area_radius, square_side * scale_factor)
     
-    for i in range(0, int(-(scaled_area_radius // -scaled_square_side))):
-        for j in range(0, int(-(row_length//-scaled_square_side))):
-            for quad in range(0,4):
-                sub_area_list.append( Sub_area(canvas,i,j,scaled_square_side,quad))
-        
-        cursor += scaled_square_side
-
-        row_length = float(np.sqrt(np.absolute(scaled_area_radius*scaled_area_radius - cursor*cursor)))
-
     canvas.pack()
     root.update()
 
@@ -54,37 +43,60 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
     
     while (run):
         t+=1
-        
+        run = False
         #----------- Move each drone ----------
 
         for i, drone in enumerate(drone_list):
-            if (trajectory == 1):
-                if (t/10  > i and drone.finished == False):  #Each drone starts moving at ith second at .01 sleep time
-                    drone.active = True
-                    drone.next_radial()
-            
-            elif (trajectory == 2):
-                if drone.finished == False:
-                    drone.active = True
-                    drone.next_ring()
 
-            elif(trajectory == 3):
-                if drone.finished == False:
-                    drone.active == True
-                    drone.next_spiral()
-        
+            if drone.finished == False:
+
+                run = True
+
+                match trajectory:
+
+                    case 1:
+                        if (t/10  > i):  #Each drone starts moving at ith second at .01 sleep time
+                            drone.active = True
+                            drone.next_radial()
+                        
+                    case 2:
+                        drone.active = True
+                        drone.next_ring()
+                    
+                    case 3:
+                        drone.active == True
+                        drone.next_spiral()
+
+                    case 4:
+                        pass
         
         sleep(.1)
         root.update()
-        
-        if (t>1000):
-            run = False
-            return sub_area_list
-        
-
+    
     root.mainloop()
+        
+    return sub_area_list
+    
+
+def generate_sub_areas(canvas, scaled_area_radius, scaled_square_side):
+    
+    cursor = 0
+    sub_area_list = []
+    row_length = scaled_area_radius
+    
+    for i in range(0, int(-(scaled_area_radius // -scaled_square_side))):
+        for j in range(0, int(-(row_length//-scaled_square_side))):
+            for quad in range(0,4):
+                sub_area_list.append(Sub_area(canvas,i,j,scaled_square_side,quad))
+        
+        cursor += scaled_square_side
+
+        row_length = float(np.sqrt(np.absolute(scaled_area_radius*scaled_area_radius - cursor*cursor))) # Rearrangement of pythag to solve for "opposite" edge
+
+    return sub_area_list
 
 def main():
+
     run = True
     again = True
     trajectory = NULL
@@ -100,8 +112,8 @@ def main():
         
         trajectory = int(trajectory)
 
-        while (radius < 0 or radius > 299):
-            radius = int(input("\nEnter area radius:\n(Must be smaller than 300 with current window size)\n(Units are abritray adjust so your radius is less than 300 units): "))
+        while (radius < 0 or radius > 200):
+            radius = int(input("\nEnter area radius:\n(Must be smaller than 200 with current window size)\n(Units are abritray adjust so your radius is less than 200 units): "))
         
         while (num_drones < 0):
             num_drones = int(input("\nEnter number of drones: "))

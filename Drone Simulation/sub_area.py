@@ -7,7 +7,7 @@ class Sub_area:
         self.canvas = canvas
         self.covered = 0
         self.side_length = scaled_square_side
-        
+
         if (quad == 0 or quad == 3):
             self.x1 = 300 + self.side_length*j
             self.x2 = 300 + self.side_length*(j+1)
@@ -21,6 +21,7 @@ class Sub_area:
         else:
             self.y1 = 300 + self.side_length*i
             self.y2 = 300 + self.side_length*(i+1)
+
 
         self.area = self.canvas.create_rectangle(self.x1, self.y1, self.x2, self.y2)
 
