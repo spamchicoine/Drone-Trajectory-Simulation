@@ -3,8 +3,9 @@ import numpy as np
 
 class Drone:
 
-    def __init__(self, trajectory, canvas, i, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list):
+    def __init__(self, trajectory, canvas, i, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles):
         self.trajectory = trajectory
+        self.cycles = cycles
         self.sub_area_list = sub_area_list
         self.canvas = canvas
         self.drone_num = i
@@ -61,15 +62,20 @@ class Drone:
                 #v = 10 * self.scale_factor
                 
                 #--- Checks if drone has reached the circle areas edge
-                if (self.R + self.coverage_radius > self.area_radius):
+                if (self.R > self.area_radius):
                     self.flip = True
                     
                 #--- Check if drone has returned to the center, if so that drone paths is complete
                 if (self.flip == True and self.R < 1):
-                    self.canvas.delete(self.drone_point)
-                    self.active = False
-                    self.finished = True
-                    return
+                    self.cycles -= 1
+                    if self.cycles == 0:
+                        self.canvas.delete(self.drone_point)
+                        self.active = False
+                        self.finished = True
+                        return
+                    
+                    else:
+                        self.flip = False
                     
                     #--- We move 1 unit at a time if the velocity is greater than 1
                 if coverage + 1/v <= 1:
@@ -192,10 +198,12 @@ class Drone:
                     vc -= vc
 
                 if (((distancex > 0) and ((self.x - 300) > 0)) and ((self.y - 300) * distancey < 0)): #Probably a bad way of checking if the drones have compeleted one rotation but it seems to work
-                    self.active = False
-                    self.finished = True
-                    self.canvas.delete(self.drone_point)
-                    vc = 0 #Stop loop
+                    self.cycles -= 1
+                    if self.cycles == 0:
+                        self.active = False
+                        self.finished = True
+                        self.canvas.delete(self.drone_point)
+                        vc = 0 #Stop loop
     
 
         # Accounting for floating points error
@@ -213,19 +221,19 @@ class Drone:
         self.y = (dy * error_scale) + 300
 
     def next_spiral(self):
+        if self.active == True:
+            newx = self.spiral_coords[self.sci][0] + 300
+            newy = self.spiral_coords[self.sci][1] + 300
 
-        newx = self.spiral_coords[self.sci][0] + 300
-        newy = self.spiral_coords[self.sci][1] + 300
+            dx = self.x - newx
+            dy = self.y - newy
 
-        dx = self.x - newx
-        dy = self.y - newy
+            self.canvas.move(self.drone_point, dx, dy)
 
-        self.canvas.move(self.drone_point, dx, dy)
+            self.x = newx
+            self.y = newy
 
-        self.x = newx
-        self.y = newy
-
-        self.sci+=1
+            self.sci+=1
 
     def check_covered_V2(self,coverage):
 

@@ -1,14 +1,14 @@
 from asyncio.windows_events import NULL
 from tkinter import *
 import numpy as np
-#import matplotlib as mp
+import matplotlib.pyplot as plt
 from time import *
 from drone import *
 from sub_area import *
 
 canvas_size = 600
 
-def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
+def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles,run):
 
     root = Tk()
 
@@ -34,7 +34,7 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
     scaled_drone_coverage = drone_coverage * scale_factor
 
     for i in range(0,num_drones):
-        drone_list.append(Drone(trajectory, canvas, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list))
+        drone_list.append(Drone(trajectory, canvas, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles))
 
     #------ Begin simulation -------
 
@@ -64,7 +64,7 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
                         drone.next_ring()
                     
                     case 3:
-                        drone.active == True
+                        drone.active = True
                         drone.next_spiral()
 
                     case 4:
@@ -72,8 +72,6 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run):
         
         sleep(.1)
         root.update()
-    
-    root.mainloop()
         
     return sub_area_list
     
@@ -99,13 +97,14 @@ def main():
 
     run = True
     again = True
-    trajectory = NULL
-    drone_coverage = -1
-    radius = -1
-    num_drones = -1
-    square_side = -1
 
     while (again==True):
+        trajectory = -1
+        drone_coverage = -1
+        radius = -1
+        num_drones = -1
+        square_side = -1
+        cycles = -1
 
         while (trajectory not in ['1','2','3']):
             trajectory = input("Select simulation trajectory:\n1: Radial\n2: Ring\n3: Spiral\n")
@@ -124,10 +123,12 @@ def main():
         while (square_side < 0 or square_side > radius):
             square_side = int(input("\nEnter the side length of sub-areas\n(Smaller sub areas means more accurate coverage but worse performance)\n(Must be smaller than radius): "))
 
-        coverage_results = run_simu(trajectory, radius, num_drones, square_side, drone_coverage, run)
+        while (cycles < 0):
+            cycles = int(input("\nEnter the number of cycles to complete\n(Number of times each drone will repeat its path): "))
+
+        coverage_results = run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles,run)
 
         for i in coverage_results:
             print(i.covered)
-
 
 main()
