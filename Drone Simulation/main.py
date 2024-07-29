@@ -78,21 +78,36 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles
 
 def generate_sub_areas(canvas, scaled_area_radius, scaled_square_side):
     
+    id = 0
+    areas_per_quad = 0
     cursor = 0
-    sub_area_list = []
+    row_length = scaled_area_radius
+
+    for i in range(0, int(-(scaled_area_radius // -scaled_square_side))):
+        for j in range(0, int(-(row_length//-scaled_square_side))):
+            areas_per_quad+=1
+            
+        cursor += scaled_square_side
+
+        row_length = float(np.sqrt(np.absolute(scaled_area_radius*scaled_area_radius - cursor*cursor)))
+
+    
+    sub_area_list = [None] * (areas_per_quad * 4)
+    cursor = 0
     row_length = scaled_area_radius
     
     for i in range(0, int(-(scaled_area_radius // -scaled_square_side))):
         for j in range(0, int(-(row_length//-scaled_square_side))):
             for quad in range(0,4):
-                sub_area_list.append(Sub_area(canvas,i,j,scaled_square_side,quad))
-        
+                sub_area_list[quad*areas_per_quad + id] = Sub_area(canvas, i, j, scaled_square_side, quad, quad*areas_per_quad + id)
+            id+=1
+    
         cursor += scaled_square_side
 
         row_length = float(np.sqrt(np.absolute(scaled_area_radius*scaled_area_radius - cursor*cursor))) # Rearrangement of pythag to solve for "opposite" edge
 
     return sub_area_list
-
+    
 def main():
 
     run = True
@@ -129,6 +144,7 @@ def main():
         coverage_results = run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles,run)
 
         for i in coverage_results:
-            print(i.covered)
+            print(i.id, i.covered)
+        pass
 
 main()

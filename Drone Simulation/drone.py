@@ -29,13 +29,16 @@ class Drone:
                 self.orbit_radius = np.sqrt(i/(num_drones+1))*self.area_radius
                 self.x = 300 + self.orbit_radius
                 self.y = 300
+                self.v = 2*np.pi*self.orbit_radius/self.tau
+                self.coord_index = 0 #Index in coords_list
+                #self.coords_list = self.create_ring_coords()
             
             case 3:
                 self.theta = (2*np.pi / num_drones) * i
-                self.spiral_coords = self.create_spiral_coords()
                 self.x = 300
                 self.y = 300
-                self.sci = 0 #Index in spiral_coords
+                self.coord_index = 0
+                self.coords_list = self.create_spiral_coords()
                 
         self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
         
@@ -44,6 +47,7 @@ class Drone:
         
     #------ Update drone for trajectory 1 -------
     def next_radial(self):
+        
         #--- Coverage is an abritrary measurement of the amount of time a sub area has been within the coverage radius of a drone
         coverage = 0
 
@@ -222,8 +226,8 @@ class Drone:
 
     def next_spiral(self):
         if self.active == True:
-            newx = self.spiral_coords[self.sci][0] + 300
-            newy = self.spiral_coords[self.sci][1] + 300
+            newx = self.coords_list[self.coord_index][0] + 300
+            newy = self.coords_list[self.coord_index][1] + 300
 
             dx = self.x - newx
             dy = self.y - newy
@@ -233,7 +237,14 @@ class Drone:
             self.x = newx
             self.y = newy
 
-            self.sci+=1
+            self.coord_index+=1
+
+            if self.coord_index >  len(self.coords_list) - 1:
+                self.cycles -= 1
+                if self.cycles == 0:
+                    self.active = False
+                    self.finished = True
+                    self.canvas.delete(self.drone_point)
 
     def check_covered_V2(self,coverage):
 
@@ -244,7 +255,7 @@ class Drone:
             distancex = np.abs(self.x - area.centerx)
             distancey = np.abs(self.y - area.centery)
 
-            cornerdistance = ((distancex - w)*(distancex - w)) + ((distancey - w)*(distancey - w))
+            cornerdistance = (distancex - w)*(distancex - w) + (distancey - w)*(distancey - w)
 
             if ((distancex > (w + self.coverage_radius)) or (distancey > (w + self.coverage_radius))):
                 area.covered+=0
