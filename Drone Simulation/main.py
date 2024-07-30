@@ -2,8 +2,8 @@ from asyncio.windows_events import NULL
 from tkinter import *
 import numpy as np
 import matplotlib.pyplot as plt
-from time import *
-from drone import *
+import time
+from drone import Drone
 from sub_area import *
 
 canvas_size = 600
@@ -14,7 +14,7 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles
 
     canvas = Canvas(root, width = canvas_size, height = canvas_size, bg="white")
 
-    area = canvas.create_oval(canvas_size/2 - 200, canvas_size/2 - 200, canvas_size/2 + 200, canvas_size/2 + 200)
+    area = canvas.create_oval(canvas_size/2 - canvas_size/3, canvas_size/2 - canvas_size/3, canvas_size/2 + canvas_size/3, canvas_size/2 + canvas_size/3)
 
     scale_factor = canvas_size / (3 * radius)
     
@@ -34,7 +34,7 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles
     scaled_drone_coverage = drone_coverage * scale_factor
 
     for i in range(0,num_drones):
-        drone_list.append(Drone(trajectory, canvas, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles))
+        drone_list.append(Drone(trajectory, canvas, canvas_size, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles))
 
     #------ Begin simulation -------
 
@@ -42,6 +42,7 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles
     tau = 1
     
     while (run):
+        start = time.time()
         t+=1
         run = False
         #----------- Move each drone ----------
@@ -70,9 +71,12 @@ def run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles
                     case 4:
                         pass
         
-        sleep(.1)
+        end = time.time()
+        if end - start < .01:
+            time.sleep(.01 - (end-start))
         root.update()
-        
+    
+    print((time.time() - start))
     return sub_area_list
     
 
@@ -126,20 +130,36 @@ def main():
         
         trajectory = int(trajectory)
 
-        while (radius < 0 or radius > 200):
-            radius = int(input("\nEnter area radius:\n(Must be smaller than 200 with current window size)\n(Units are abritray adjust so your radius is less than 200 units): "))
+        while (radius <= 0):
+            try:
+                radius = int(input("\nEnter area radius: "))
+            
+            except:
+                pass
         
-        while (num_drones < 0):
-            num_drones = int(input("\nEnter number of drones: "))
+        while (num_drones <= 0):
+            try:
+                num_drones = int(input("\nEnter number of drones: "))
+            except:
+                pass
         
         while (drone_coverage < 0 or drone_coverage > radius):
-            drone_coverage = int(input("\nEnter drone coverage radius:\n(Must be smaller than area radius): "))
+            try:
+                drone_coverage = int(input("\nEnter drone coverage radius:\n(Must be smaller than area radius): "))
+            except:
+                pass
 
-        while (square_side < 0 or square_side > radius):
-            square_side = int(input("\nEnter the side length of sub-areas\n(Smaller sub areas means more accurate coverage but worse performance)\n(Must be smaller than radius): "))
+        while (square_side < max(1,radius/(canvas_size/3)) or square_side > radius):
+            try:
+                square_side = int(input("\nEnter the side length of sub-areas\n(Smaller sub areas means more accurate coverage but worse performance)\n(Must be smaller than radius): "))
+            except:
+                pass
 
-        while (cycles < 0):
-            cycles = int(input("\nEnter the number of cycles to complete\n(Number of times each drone will repeat its path): "))
+        while (cycles < 1):
+            try:
+                cycles = int(input("\nEnter the number of cycles to complete\n(Number of times each drone will repeat its path): "))
+            except:
+                pass
 
         coverage_results = run_simu(trajectory, radius, num_drones, square_side, drone_coverage, cycles,run)
 

@@ -3,16 +3,18 @@ import numpy as np
 
 class Drone:
 
-    def __init__(self, trajectory, canvas, i, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles):
+    def __init__(self, trajectory, canvas, canvas_size, i, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, sub_area_list, cycles):
         self.trajectory = trajectory
         self.cycles = cycles
         self.sub_area_list = sub_area_list
+        self.sub_area_list_length = len(self.sub_area_list)
         self.canvas = canvas
+        self.canvas_size = canvas_size
         self.drone_num = i
         self.area_radius = scaled_area_radius
         self.coverage_radius = scaled_drone_coverage
         self.scale_factor = scale_factor
-        self.tau = 100
+        
 
         self.active = False
         self.finished = False
@@ -20,27 +22,31 @@ class Drone:
         match self.trajectory:
             
             case 1:
-                self.x = 300
-                self.y = 300
+                self.tau = 100
+                self.x =self.canvas_size/2
+                self.y =self.canvas_size/2
                 self.theta = (2*np.pi / num_drones) * i
                 self.flip = False
             
             case 2:
+                self.tau = 100
                 self.orbit_radius = np.sqrt(i/(num_drones+1))*self.area_radius
-                self.x = 300 + self.orbit_radius
-                self.y = 300
+                self.x =self.canvas_size/2 + self.orbit_radius
+                self.y =self.canvas_size/2
                 self.v = 2*np.pi*self.orbit_radius/self.tau
                 self.coord_index = 0 #Index in coords_list
-                #self.coords_list = self.create_ring_coords()
             
             case 3:
+                self.tau = 1
                 self.theta = (2*np.pi / num_drones) * i
-                self.x = 300
-                self.y = 300
+                self.x = self.canvas_size/2
+                self.y = self.canvas_size/2
+                self.tick = 0
                 self.coord_index = 0
                 self.coords_list = self.create_spiral_coords()
                 
-        self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
+                
+        self.R = np.sqrt((self.x -self.canvas_size/2)*(self.x -self.canvas_size/2) + (self.y -self.canvas_size/2)*(self.y -self.canvas_size/2))
         
         self.drone_point = self.canvas.create_oval(self.x - self.coverage_radius, self.y - self.coverage_radius, self.x + self.coverage_radius, self.y + self.coverage_radius,fill='blue')
         
@@ -59,7 +65,7 @@ class Drone:
             if self.active == True:
 
                 #--- Distance from drones center to the "origin" (circle areas center)
-                self.R = np.sqrt((self.x - 300)*(self.x - 300) + (self.y - 300)*(self.y - 300))
+                self.R = np.sqrt((self.x -self.canvas_size/2)*(self.x -self.canvas_size/2) + (self.y -self.canvas_size/2)*(self.y -self.canvas_size/2))
 
 
                 v = (self.area_radius * self.area_radius) / (self.tau*(self.R + 1))
@@ -84,7 +90,7 @@ class Drone:
                     #--- We move 1 unit at a time if the velocity is greater than 1
                 if coverage + 1/v <= 1:
 
-                    self.check_covered_V2(1/v)
+                    self.check_covered_areas_V2(1/v)
                     coverage += 1/v
 
                     pass
@@ -108,7 +114,7 @@ class Drone:
                     vrx = np.cos(self.theta)*r
                     vry = np.sin(self.theta)*r*-1
 
-                    self.check_covered_V2(1-coverage)
+                    self.check_covered_areas_V2(1-coverage)
                     coverage = 1
 
                     pass
@@ -142,7 +148,7 @@ class Drone:
                 
                 if vc >= 1:
 
-                    self.check_covered_V2(1/v)
+                    self.check_covered_areas_V2(1/v)
 
                     v1x = abs(distancey / self.orbit_radius)
                     v1y = abs(distancex / self.orbit_radius)
@@ -172,7 +178,7 @@ class Drone:
                     vc -= 1
                 
                 elif vc > 0:
-                    self.check_covered_V2(vc/v)
+                    self.check_covered_areas_V2(vc/v)
 
                     vrx = abs(distancey / (self.orbit_radius/vc))
                     vry = abs(distancex / (self.orbit_radius/vc))
@@ -246,29 +252,104 @@ class Drone:
                     self.finished = True
                     self.canvas.delete(self.drone_point)
 
-    def check_covered_V2(self,coverage):
+    def check_covered_areas_V2(self,coverage):
+        
+        indexs = self.get_CCAV2_indexs(self.sub_area_list_length)
+        temp_side_length = self.sub_area_list[1].side_length # Side length never changes so reduce number of references just using this
 
-        for area in self.sub_area_list:
+        for pair in range(0,int(len(indexs)/2)):
 
-            w = area.side_length/2
+            for i in range(int(indexs[(1 + 2*pair)-1])-1, int(indexs[(2 + 2*pair)-1])):
 
-            distancex = np.abs(self.x - area.centerx)
-            distancey = np.abs(self.y - area.centery)
+                if self.check_overlap(self.sub_area_list[i].centerx, self.sub_area_list[i].centery, temp_side_length):
+                    self.sub_area_list[i].covered += coverage
 
-            cornerdistance = (distancex - w)*(distancex - w) + (distancey - w)*(distancey - w)
+    def get_CCAV2_indexs(self, sub_area_list_length):
 
-            if ((distancex > (w + self.coverage_radius)) or (distancey > (w + self.coverage_radius))):
-                area.covered+=0
+        k = self.canvas_size / 1.5
+        j = self.canvas_size / 3
+
+        # Get which quadrants the drone is in
+        inq1 = self.check_overlap(k, j, j)
+        inq2 = self.check_overlap(j, j, j)
+        inq3 = self.check_overlap(j, k, j)
+        inq4 = self.check_overlap(k, k, j)
+
+        # Might be the worst looking thing I've ever written but this determines what part of the sub area list to search depending on which quadrants the drone is in
+        if inq1:
+
+            if inq2:
+
+                if inq3:
+
+                    if inq4:
+                        return (1, sub_area_list_length) # In quadrants 1,2,3,4
+                    else:
+                        return (1, sub_area_list_length*0.75) # In quadrants 1,2,3
+                else:
+
+                    if inq4:
+                        return (1, sub_area_list_length/2, sub_area_list_length*.75 + 1, sub_area_list_length) # In quadrants 1,2,4
+                    else:
+                        return (1, sub_area_list_length/2) # In quadrants 1,2
+            else:
+
+                if inq4:
+
+                    if inq3:
+                        return (1, sub_area_list_length/4, sub_area_list_length/2 + 1, sub_area_list_length) # In quadrants 1,3,4
+                    else:
+                        return (1, sub_area_list_length/4, sub_area_list_length*.75 + 1, sub_area_list_length) # In quadrants 1,4
+                else:
+                    return (1, sub_area_list_length/4) # In quadrant 1
             
-            elif ((distancex < w) or (distancey < w)):
-                area.covered+=coverage
+        elif inq2:
+            
+            if inq3:
 
-            elif cornerdistance < self.coverage_radius*self.coverage_radius:
-                area.covered+=coverage
+                if inq4:
+                    return (sub_area_list_length/4 + 1, sub_area_list_length)  # In quadrants 2,3,4
+                else:
+                    return (sub_area_list_length/4 + 1, sub_area_list_length*.75) # In quadrants 2,3
+            else:
+                return  (sub_area_list_length/4 + 1, sub_area_list_length/2) # In quadrant 2
+        
+        elif inq3:
+
+            if inq4:
+                return (sub_area_list_length/2 + 1, sub_area_list_length) # In quadrants 3,4
+            else:
+                return (sub_area_list_length/2 + 1, sub_area_list_length*.75) # In quadrant 3
+        
+        elif inq4:
+            return (sub_area_list_length*.75 + 1, sub_area_list_length) # In quadrant 4
+
+    
+    def check_overlap(self, squ_centerx, squ_centery, side_length):
+
+        # This assumes self is a circle (drone in this case) and checks if it overlaps a square defined by the other parameters
+        w = side_length/2
+
+        # These are absolute meaning it doesnt matter which side the circle is the math will be the same.
+        distancex = np.abs(self.x - squ_centerx)
+        distancey = np.abs(self.y - squ_centery)
+        
+        # Easy case, drone cannot possibly be overlapping if its distance in y or x is greater than w plus the radius of the drone
+        if ((distancex > (w + self.coverage_radius)) or (distancey > (w + self.coverage_radius))):
+            return False
+        
+        # Then if the distance in x !!OR!! distance in y is less than w we know there is overlap (side case)
+        elif ((distancex < w) or (distancey < w)):
+            return True
+        
+        # Then check the literal corner case using the distance from the circle to square's corner
+        elif ((distancex - w)*(distancex - w) + (distancey - w)*(distancey - w)) < self.coverage_radius*self.coverage_radius:
+            return True
+
 
     def create_spiral_coords(self):
 
-        coord_list =[]
+        coord_list = []
 
         pi_sq = np.pi*np.pi
         tal = self.area_radius * (2*((1+pi_sq)**(3/2) - 1))/(3*pi_sq) # Total arc length
@@ -296,3 +377,14 @@ class Drone:
             coord_list.append((x,y,htag))
         
         return coord_list
+    
+    def spiral_next_V2(self):
+        self.tick += 1
+
+        if self.tick > 10:
+            self.cycles -= 1
+
+            if self.cycles == 0:
+                self.active = False
+                self.finished = True
+                self.canvas.delete(self.drone_point)
