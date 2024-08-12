@@ -1,0 +1,183 @@
+Drone Simulation User Guide
+===========================
+
+This will cover the neccesary libraries and basic use instructions
+
+Premise
+---------
+
+This is a simulation to track the coverage drones provide 
+following certain trajectories in a circular area with the
+goal of achieving uniform coverage.
+
+This is part of an undergraduate research project and should
+probably not be used for any real world applications.
+
+Installation
+------------
+
+Install Python, version 3.12.0 was used for this program.
+Install the following libraries
+
+- tkinter
+- numpy
+- time (should be standard and not require manual install)
+
+Then download at least the main.py, drone.py and sub_area.py
+files into a directory.
+
+Running Program
+---------------
+
+In the directory you downloaded the python files to
+run "main.py" or run from anywhere within your file system
+if you want to specify the relative path.
+
+User inputs
+===========
+
+The Simulation will prompt the user for several inputs.
+
+Simulation Type
+---------------
+
+First is the simulation type, Radial, Ring or Spiral.
+
+These are the three trajectories explored to achieve uniform
+coverage, part of this means spreading drones out equally.
+
+In no scenario will a single drone completeing a single cycle
+cover the area uniformaly however as the drones increase in
+number and cycles they will be distributed to approach uniform
+coverage.
+
+Area Radius
+-----------
+
+The next input is the radius of the area the drones will cover.
+Note that the program scales all visuals so that the visual 
+appareance of the area.
+
+Number of Drones
+----------------
+
+Next is number of drones, this is important as many drones may 
+be required to evenly cover all parts of the circles. This is 
+much clearer once you have run the simulation a few times feel
+free to start with a single drone and increase. 
+
+Keep in mind increase in drones is one of the two major factors
+in the simulations performance.
+
+Drone Coverage Radius
+---------------------
+
+Next is the radius of the area each drone will cover. This is
+also fairly important as drones covering a relatively larger
+area will in most cases reduce the number of drones required
+to reach a meaninful result.
+
+Sub Area Side Length
+--------------------
+
+The size of sub area side length is very important. In order
+to decide which part of the circle a drone is covering the 
+circle is tiled with squares. The coverage each square
+recieves is the data used for the final graph of coverage.
+
+Although squares are easy to tile and work with they of course
+cannot tile a circle perfectly. Sub areas cut off by the edges
+of the circle and/or simply positioned "poorly" relative to
+the trajectories of drones expectly recievce proportionally
+less coverage.
+
+A smaller sub area sidelength will increase the accuracy but
+increase the total number of sub areas proportionally. Which
+is the second major factor in simulation perfomance. An easy
+tip to follow is to make your area radius divisible by your
+sub area side length. With the way the circle is tiled this
+greatly improves the effectiveness of the tiling and reduces
+cutoff sub areas. Again expiremenation may be neccesary.
+
+Number of Cycles
+----------------
+
+This input basically determines how many times each drone will
+peform its trajectory path. For the determinstic Radial and
+Ring trajectories this will simply scale the results
+proportionally to the number of cycles.
+
+For Spiral however an increase in cycles can function like
+sending more drones out as the angle of the trajectory will
+change just as more drones would. The difference is in the
+timing, more drones have their own timings set by the timing 
+system for multiple drones. More cycles simply means drones
+will continue to repeat spiral trajectories with new angles
+after each is completed.
+
+Simulation Run Time
+-------------------
+
+Onces inputs are completed the simulation will begin creating
+a tkinter window with a visualization of the simulation. This
+simulation has a system to prevent it from running too fast.
+However the program will likely slow down depending on the
+number of drones and length of sub areas.
+
+The simulation can be stopped by exiting the program using
+the escape key or control-V which will both throw an error.
+
+Do note that because of the way (aka poor programming) inputs
+are verified control-V does not exit the program while giving
+inputs.
+
+Results
+-------
+
+Results are given as a bar graph showing the amount of
+coverage each sub area recived. 1 unit of coverage is defined
+as a sub area being within drone coverage for 1 "tick". Note
+that a "tick" is fairly abritrary and updates are broken down
+within ticks resulting in fractions of coverage for accuracy.
+As well as note the real important here is the relative
+amount of coverage recieved by each sub area.
+
+FAQ
+-----------
+
+Q: "Simulation is running poorly"
+
+A: Python is an interperated language and tkinter serving as
+the graphical interfacen doesn't help. Follow previously
+mentioned tips and note if drones are overlapping a lot
+specifcally in radial/ring you may be using more drones than
+neccesary. Also note if you sub areas are poorly lined up with
+the edges of the circle. But at the end of the day it doesn't
+take a ton to start making this program chug.
+
+Q: "Results are not looking very even"
+
+A: This is because tiling a circle always results in sub areas
+being cutoff specifcally around the edges. These areas recieve
+proportionally less coverage. Origonally it was planned to
+adjust coverage values based on the actual amount a sub area
+overlaps with the circle. However calculating this overlapped
+area becomes impossible unless certain symertries are met which
+would make the possible user inputs far more complicated and
+restricted. Now frankly this may very well be a worthwhile
+tradeoff but for the integretiy of this simulation doing rough
+approximations of the overlaps was not an option. Again this
+is not a profressional level project use results at your 
+discretion.
+
+Q: "These comments suck how does this code work"
+
+A: Good question there is a development guide that covers a
+lot of the conceptual aspects of the program. As well as 
+why many perhaps questionable choices were made. If you still
+have further questions feel free to contact me.
+
+Contact Information
+-------------------
+
+schicoine@umass.edu

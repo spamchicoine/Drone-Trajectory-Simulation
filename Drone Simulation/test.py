@@ -1,27 +1,25 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-tick = 10
-t = tick * 0.1
-area_radius = 5
-tau = 1
 
-t_squ = t*t
-pi_squ4 = 4 * (np.pi * np.pi)
+tick = 2
+t = tick * 0.01
+area_radius = 200
+tau = 4
 
-x_s = (area_radius * t_squ * np.cos(2*np.pi*t)) #/ pi_squ4
-y_s = (area_radius * t_squ * np.sin(2*np.pi*t)) #/ pi_squ4
+pi_squ = np.pi * np.pi
+pi_squ4 = 4 * pi_squ
 
-x_s_squ = x_s*x_s
-y_s_squ = y_s*y_s
+h_inv_t = 2*np.pi*np.sqrt(np.sqrt(t/tau))
 
-h_t = (tau * (x_s_squ + y_s_squ)) / (area_radius*area_radius)
-h_t_squ = h_t*h_t
+x_t = (area_radius * (h_inv_t * h_inv_t) * np.cos(h_inv_t)) / pi_squ4
+y_t = (area_radius * (h_inv_t * h_inv_t) * np.sin(h_inv_t)) / pi_squ4
 
-r_s = (tau * (h_t_squ * h_t_squ)) / (area_radius*area_radius)
-r_s_squ = r_s * r_s
+theta = np.arctan(y_t/x_t)
 
-x_t = (area_radius * r_s_squ * np.cos(2*np.pi*r_s)) #/ pi_squ4
-y_t = (area_radius * r_s_squ * np.sin(2*np.pi*r_s)) #/ pi_squ4
+current_arc_length = ((area_radius * (2 * ((theta * theta) + 4)**(3/2) - 16) )/ (24 * pi_squ))
 
-print(r_s)
+print(h_inv_t)
+print(theta)
+print(current_arc_length)
 print (x_t, y_t)
