@@ -5,7 +5,7 @@ import time
 from drone import Drone
 from sub_area import *
 
-canvas_size = 600 # Size of tkinter window's width/heigth
+Tkinter_canvas_size = 600 # Size of tkinter window's width/heigth
 exit_simulation = False # Used to end simulation early if user presses escape
 tick_l = 0.01
 
@@ -21,13 +21,13 @@ def run_simulation(trajectory, area_radius, num_drones, square_side, drone_cover
     root = Tk()
 
     # Our windows canvas to places objects onto
-    canvas = Canvas(root, width = canvas_size, height = canvas_size, bg="white")
+    canvas = Canvas(root, width = Tkinter_canvas_size, height = Tkinter_canvas_size, bg="white")
 
     # The circular area the drones will cover
-    area = canvas.create_oval(canvas_size/2 - canvas_size/3, canvas_size/2 - canvas_size/3, canvas_size/2 + canvas_size/3, canvas_size/2 + canvas_size/3)
+    area = canvas.create_oval(Tkinter_canvas_size/2 - Tkinter_canvas_size/3, Tkinter_canvas_size/2 - Tkinter_canvas_size/3, Tkinter_canvas_size/2 + Tkinter_canvas_size/3, Tkinter_canvas_size/2 + Tkinter_canvas_size/3)
 
     # Very important this allows the visual size of the area to remain the same with all other objects scaling accordingly
-    scale_factor = canvas_size / (3 * area_radius)
+    scale_factor = Tkinter_canvas_size / (3 * area_radius)
     
     # The actual length of the areas radius
     scaled_area_radius = area_radius * scale_factor
@@ -53,7 +53,7 @@ def run_simulation(trajectory, area_radius, num_drones, square_side, drone_cover
 
     # Create drone objects for the number of drones the user inputted
     for i in range(0, len(drone_list)):
-        drone_list[i] = Drone(trajectory, canvas, canvas_size, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, cycles)
+        drone_list[i] = Drone(trajectory, canvas, Tkinter_canvas_size, i+1, scaled_area_radius, scale_factor, num_drones, scaled_drone_coverage, cycles)
 
     #------ Begin simulation -------
 
@@ -114,6 +114,8 @@ def run_simulation(trajectory, area_radius, num_drones, square_side, drone_cover
     # Store coverage results, the index in this list corrosponds to the sub_areas id so no need to store extra information
     for i, area in enumerate(sub_area_list):
         results[i] = area.covered
+    
+    root.destroy()
 
     return results
 
@@ -144,7 +146,7 @@ def generate_sub_areas(canvas, scaled_area_radius, scaled_square_side):
     for i in range(0, int(-(scaled_area_radius // -scaled_square_side))):
         for j in range(0, int(-(row_length//-scaled_square_side))):
             for quad in range(0,4):
-                sub_area_list[quad*areas_per_quad + id] = Sub_area(canvas, i, j, scaled_square_side, quad, quad*areas_per_quad + id)
+                sub_area_list[quad*areas_per_quad + id] = Sub_area(canvas, Tkinter_canvas_size, i, j, scaled_square_side, quad, quad*areas_per_quad + id)
             id+=1
     
         cursor += scaled_square_side
@@ -153,6 +155,7 @@ def generate_sub_areas(canvas, scaled_area_radius, scaled_square_side):
 
     return sub_area_list
 
+# This creates squares to not entirely tile the circular area only creating sub areas that will fit completely. Really just used for testing purposes.
 def generate_sub_areas_less(canvas, scaled_area_radius, scaled_square_side):
     
     id = 0 # Incrementing ID to be assigned to each new sub area
@@ -160,8 +163,9 @@ def generate_sub_areas_less(canvas, scaled_area_radius, scaled_square_side):
     cursor = scaled_square_side  # Corrosponds to which row we are currently creating
     row_length = float(np.sqrt(np.absolute(scaled_area_radius*scaled_area_radius - cursor*cursor))) # We start at the base of our first quadrant where the row length is the radius
     rows = float(np.sqrt(np.absolute(scaled_square_side*scaled_square_side - scaled_area_radius*scaled_area_radius)))
-    # This actually calculates the areas per quad, very similar code is used to actually create the sub areas but first we need to know this number
-    # The -(x // -y) actually performs a ceiling divide. if the initial row lenght is 100 and the square side length is 30, it will take 4 squares to form that row
+
+    # This calculates the areas per quad, very similar code is used to actually create the sub areas but first we need to know this number
+    # We use a floor divide here to get the number of rows and sub areas per row.s
     for i in range(0, int(rows // scaled_square_side)):
         areas_per_quad += int(row_length // scaled_square_side)
         
@@ -178,7 +182,7 @@ def generate_sub_areas_less(canvas, scaled_area_radius, scaled_square_side):
     for i in range(0, int(rows // scaled_square_side)):
         for j in range(0, int(row_length // scaled_square_side)):
             for quad in range(0,4):
-                sub_area_list[quad*areas_per_quad + id] = Sub_area(canvas, i, j, scaled_square_side, quad, quad*areas_per_quad + id)
+                sub_area_list[quad*areas_per_quad + id] = Sub_area(canvas, Tkinter_canvas_size, i, j, scaled_square_side, quad, quad*areas_per_quad + id)
             id+=1
     
         cursor += scaled_square_side
@@ -224,7 +228,7 @@ def main():
             trajectory = input("Select simulation trajectory:\n1: Radial\n2: Ring\n3: Spiral\n")
 
             if trajectory not in ['1','2','3']:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
         
         trajectory = int(trajectory)
 
@@ -233,32 +237,32 @@ def main():
                 area_radius = int(input("\nEnter area radius: "))
             
             except:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
         
         while (num_drones <= 0):
             try:
                 num_drones = int(input("\nEnter number of drones: "))
             except:
-                print("Invalid input\n")
+                print("\nInvalid Input")
         
         while (drone_coverage < 0 or drone_coverage > area_radius):
             try:
                 drone_coverage = int(input("\nEnter drone coverage radius:\n(Must be smaller than area radius): "))
             except:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
         
         # we do not want the sub area side lengths to less than a single unit
-        while (square_side < max(1, area_radius/(canvas_size/3)) or square_side > area_radius):
+        while (square_side < max(1, area_radius/(Tkinter_canvas_size/3)) or square_side > area_radius):
             try:
                 square_side = int(input("\nEnter the side length of sub-areas\n(Smaller sub areas means more accurate coverage but worse performance)\n(Must be smaller than area radius): "))
             except:
-                print("Invalid input\n")
+                print("\nInvalid input")
 
         while (cycles < 1):
             try:
                 cycles = int(input("\nEnter the number of cycles to complete\n(Number of times each drone will repeat its path): "))
             except:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
 
         coverage_results = np.asarray(run_simulation(trajectory, area_radius, num_drones, square_side, drone_coverage, cycles))
 
@@ -267,25 +271,31 @@ def main():
         
         fig, ax = plt.subplots()
         ax.bar(sub_area_ids, coverage_results)
+
+        ax.set_xlabel("Sub Area ID")
+        ax.set_xticks(sub_area_ids, minor=True)
+        ax.set_ylabel("Coverage")
+        ax.set_title(['Radial','Ring','Spiral'][trajectory-1]+" Sub Area Coverage")
+
         plt.show()
 
         #---- Save Results ----
         while saveresults not in ["n", "y", "Y", "N"]:
-            saveresults = input("Would you like to save result (Y/N): ")
+            saveresults = input("\nWould you like to save result (Y/N): ")
 
             if saveresults not in ["n", "y", "Y", "N"]:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
         
         if saveresults in ["y", "Y"]:
-            savename = input("Enter image name to save to: ") + ".png"
+            savename = input("\nEnter image name to save to: ") + ".png"
             fig.savefig(savename)
         
         #----- Run Again -----
         while again not in ["n", "y", "Y", "N"]:
-            again = input("Would you like to run simulation again (Y/N): ")
+            again = input("\nWould you like to run simulation again (Y/N): ")
 
             if again not in ["n", "y", "Y", "N"]:
-                print("Invalid Input\n")
+                print("\nInvalid Input")
         
         if again in ["y", "Y"]:
             again = True

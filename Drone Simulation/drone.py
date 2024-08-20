@@ -96,7 +96,7 @@ class Drone:
                     v1x = np.cos(self.rotation)
                     v1y = np.sin(self.rotation)*-1
 
-                    self.check_covered_areas_V2(1/v, sub_area_list) # Check which areas are being covered
+                    self.check_covered_areas(1/v, sub_area_list) # Check which areas are being covered
                     coverage += 1/v    # Wpdate this updates total coverage
                     
                     # If we are moving in the other direction make negative movements
@@ -125,7 +125,7 @@ class Drone:
                     vrx = np.cos(self.rotation)*r
                     vry = np.sin(self.rotation)*r*-1
 
-                    self.check_covered_areas_V2(1-coverage, sub_area_list)    # Check the regions coverage and allocate the last bit of coverage for this update
+                    self.check_covered_areas(1-coverage, sub_area_list)    # Check the regions coverage and allocate the last bit of coverage for this update
                     coverage = 1 # Realistically should be coverage += r/v but because of floating point errors that might not actually make our total coverage one but mathimatically it should be so just set it
 
 
@@ -159,14 +159,14 @@ class Drone:
             if self.active == True:
                 
                 # Distance from the center of the area to the center of our drone
-                distancex = self.x - 300
-                distancey = self.y - 300
+                distancex = self.x - self.canvas_size/2
+                distancey = self.y - self.canvas_size/2
                 
                 # If remaining velocity to process is greater than 1 we will move 1 unit
                 # Remember we do not want to move more than one unit at a time we must break an update based on velocity into smaller movements
                 if vc >= 1:
 
-                    self.check_covered_areas_V2(1/v, sub_area_list)    # Check areas covered
+                    self.check_covered_areas(1/v, sub_area_list)    # Check areas covered
 
                     # This has been greatly simplified but this is the distance to move 1 unit along the tanget of the line drawn between the areas center and the drones center, continously moving along this tangent results in an orbit
                     v1x = abs(distancey / self.orbit_radius) 
@@ -201,7 +201,7 @@ class Drone:
                 # Handle he remainder if there is one
                 elif vc > 0:
 
-                    self.check_covered_areas_V2(vc/v, sub_area_list)   # Check covered sub areas
+                    self.check_covered_areas(vc/v, sub_area_list)   # Check covered sub areas
 
                     # Distance to move the remainder along the tanget of the line drawn between the areas center and the drones center
                     vrx = abs(distancey / (self.orbit_radius/vc))
@@ -233,7 +233,7 @@ class Drone:
                     vc -= vc
 
                 #Probably a bad way of checking if the drones have compeleted a rotation but it seems to work
-                if (((distancex > 0) and ((self.x - 300) > 0)) and ((self.y - 300) * distancey < 0)):
+                if (((distancex > 0) and ((self.x - self.canvas_size/2) > 0)) and ((self.y - self.canvas_size/2) * distancey < 0)):
                     
                     self.cycles -= 1    # Decrement cycles every rotation
 
@@ -246,8 +246,8 @@ class Drone:
     
         # Must do something for floating points error as otherwise the drones drift
         # The the drone is supposed to orbit at self.orbit_radius, so see how far off the actual distance is and scale accordingly
-        dx = self.x - 300
-        dy = self.y - 300
+        dx = self.x - self.canvas_size/2
+        dy = self.y - self.canvas_size/2
 
         self.R = np.sqrt(dx*dx + dy*dy)     # Drone distance from center
         
@@ -256,8 +256,8 @@ class Drone:
         self.canvas.move(self.drone_point, (dx * error_scale) - dx, (dy * error_scale) - dy)    # Move the corrosponding object on canvas accordingly
 
         # Update our x and y coords accordingly
-        self.x = (dx * error_scale) + 300
-        self.y = (dy * error_scale) + 300
+        self.x = (dx * error_scale) + self.canvas_size/2
+        self.y = (dy * error_scale) + self.canvas_size/2
 
     #------ Update drone for trajectory 3 -------
     def next_spiral(self, sub_area_list, t):
@@ -298,7 +298,7 @@ class Drone:
                     # Otherwise we will reset the drone for the next cycle
                     self.theta = 0     # Reset angle to 0
                     self.rotation = random.random() * 2*np.pi   # Pick a new random rotation
-                    self.canvas.move(self.drone_point, 300 - self.x, 300 - self.y)  # Move corrosponding circle on canvas back to center
+                    self.canvas.move(self.drone_point, self.canvas_size/2 - self.x, self.canvas_size/2 - self.y)  # Move corrosponding circle on canvas back to center
                     self.x = self.canvas_size/2     # Reset x back to center
                     self.y = self.canvas_size/2     # Reset y back to center
                     return
@@ -306,7 +306,7 @@ class Drone:
                 # If the arc length left for this update is greater than one
                 if arc_move_left >= 1:
 
-                    self.check_covered_areas_V2(1/arc_move, sub_area_list)  # Check coverage
+                    self.check_covered_areas(1/arc_move, sub_area_list)  # Check coverage
 
                     # Adjust values
                     curr_arc_l += 1
@@ -315,7 +315,7 @@ class Drone:
                 # Handle remainder arc length to move
                 elif arc_move_left > 0:
 
-                    self.check_covered_areas_V2(arc_move_left/arc_move, sub_area_list)  # Check coverage
+                    self.check_covered_areas(arc_move_left/arc_move, sub_area_list)  # Check coverage
 
                     # Adjust values, move should be finished
                     curr_arc_l = end_arc_l
@@ -345,9 +345,9 @@ class Drone:
     
 
     # This checks which sub areas the drone called on is covering
-    def check_covered_areas_V2(self, coverage, sub_area_list):
+    def check_covered_areas(self, coverage, sub_area_list):
         sub_area_list_length  = len(sub_area_list)  # We use this value a lot so just declare it here
-        indexs = self.get_CCAV2_indexs(sub_area_list_length)   # Get indexs of where in the sub area list we should search
+        indexs = self.get_CCA_indexs(sub_area_list_length)   # Get indexs of where in the sub area list we should search
         temp_side_length = sub_area_list[1].side_length   # Side length never changes so reduce number of references just using this
 
         # This will loop through each pair of indexs (either one or two pairs in our case)
@@ -361,7 +361,7 @@ class Drone:
                     sub_area_list[i].covered += coverage   # If so add our scaled coverage amount to that sub area
 
     # Return indexes used to traverse only the parts of our sub area list corrosponding to the quadrants our drone is in
-    def get_CCAV2_indexs(self, sub_area_list_length):
+    def get_CCA_indexs(self, sub_area_list_length):
 
         k = self.canvas_size / 1.5
         j = self.canvas_size / 3
